@@ -1,85 +1,61 @@
-from sqlalchemy import create_engine, text
 import sqlite3
-# Define the database URL
-DB_URL = "sqlite:///movies.db"
-
 
 DB_NAME = "movies.db"
 
+def connect():
+    return sqlite3.connect(DB_NAME)
 
+def create_table():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS movies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        year INTEGER,
+        rating REAL
+    )
+    """)
+    conn.commit()
+    conn.close()
 
-# Create the engine
-engine = create_engine(DB_URL)
+def add_movie(title, year, rating):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO movies (title, year, rating) VALUES (?, ?, ?)", (title, year, rating))
+    conn.commit()
+    conn.close()
 
-# Create the movies table if it does not exist
-def create_movies_table():
-    with engine.connect() as connection:
-        connection.execute(text("""
-            CREATE TABLE IF NOT EXISTS movies (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                year INTEGER NOT NULL,
-                rating REAL NOT NULL
-            )
-        """))
-        connection.commit()
-#create_movies_table()
+def get_movies():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM movies")
+    movies = cursor.fetchall()
+    conn.close()
+    return movies
 
+def delete_movie(movie_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM movies WHERE id=?", (movie_id,))
+    conn.commit()
+    conn.close()
 
-def list_movies():
-    """Retrieve all movies from the database."""
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT title, year, rating FROM movies"))
-        movies = result.fetchall()
+def delete_movie_by_title(title):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM movies WHERE title=?", (title,))
+    conn.commit()
+    conn.close()
+    if cursor.rowcount > 0:
+        print(f"Movie '{title}' deleted successfully.")
+    else:
+        print(f"Movie '{title}' not found.")
 
-    return {
-            "Inception": {"year": 2010, "rating": 8.8, "poster": "https://..."}
-           }
-
-def add_movie(title, year, rating, poster):
-    """Add a new movie into the database."""
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT OR REPLACE INTO movies VALUES (?, ?, ?, ?)",
-                       (title, year, rating, poster))
-        conn.commit()
-def delete_movie(title):
-    """Delete a movie from the database."""
-    with engine.connect() as connection:
-        try:
-            result = connection.execute(
-                text("DELETE FROM movies WHERE title = :title"),
-                {"title": title}
-            )
-            connection.commit()
-            if result.rowcount == 0:
-                print(f"Movie '{title}' not found.")
-            else:
-                print(f"Movie '{title}' deleted successfully.")
-        except Exception as e:
-            print(f"Error: {e}")
-
-
-def update_movie(title, rating):
-    """Update a movie's rating in the database (case-insensitive handled in Python)."""
-    with engine.connect() as connection:
-        # Get existing titles
-        result = connection.execute(text("SELECT title FROM movies"))
-        titles = [row[0] for row in result.fetchall()]
-
-        matched_title = next((t for t in titles if t.lower() == title.lower()), None)
-
-        if not matched_title:
-            print(f"Movie '{title}' not found.")
-            return
-
-        try:
-            result = connection.execute(
-                text("UPDATE movies SET rating = :rating WHERE title = :title"),
-                {"title": matched_title, "rating": rating}
-            )
-            connection.commit()
-            print(f"Movie '{matched_title}' updated successfully.")
-        except Exception as e:
-            print(f"Error: {e}")
-
+def search_movie_by_title(title):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM movies WHERE title=?", (title,))
+    movie = cursor.fetchone()
+    conn.close()
+    return movie

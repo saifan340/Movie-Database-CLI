@@ -53,9 +53,14 @@ def input_movie_year():
 def command_list_movies():
     """Retrieve and display all movies from the database."""
     movies = storage.list_movies()
+
     print(f"{len(movies)} movies in total")
-    for title, data in movies.items():
-        print(f"{title} ({data['year']}) - ⭐ {data['rating']} | Poster: {data['poster']}")
+
+    for movie in movies:
+        print(
+            f"{movie['title']} ({movie['year']}) "
+            f"- ⭐ {movie['rating']}"
+        )
 
 
 def command_add_movie():
@@ -76,7 +81,7 @@ def command_add_movie():
             movie_data["title"],
             movie_data["year"],
             movie_data["rating"],
-            movie_data["poster"]
+
         )
         print(f"Added {movie_data['title']} ({movie_data['year']}) - Rating: {movie_data['rating']}")
         break
